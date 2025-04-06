@@ -40,9 +40,9 @@ app.set("views", __dirname + "/views");
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
 
-// Render home page
+// Redirect to login page by default
 app.get("/", (req, res) => {
-  res.render("index", { message: "Welcome to the Dashboard!" });
+  res.redirect("/api/users/login");
 });
 
 // Socket.io connection
