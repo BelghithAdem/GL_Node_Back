@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+</head>
+<body>
+  <h1>Dashboard</h1>
+  <div id="stats">
+    <h2>Statistiques des tâches</h2>
+    <ul>
+      <li>Total des tâches : <span id="totalTasks"></span></li>
+      <li>En attente : <span id="pending"></span></li>
+      <li>En cours : <span id="in_progress"></span></li>
+      <li>Terminées : <span id="completed"></span></li>
+      <li>Annulées : <span id="cancelled"></span></li>
+    </ul>
+  </div>
+
+  <script>
+    fetch('/api/tasks/stats')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('totalTasks').textContent = data.totalTasks;
+        document.getElementById('pending').textContent = data.stats.pending || 0;
+        document.getElementById('in_progress').textContent = data.stats.in_progress || 0;
+        document.getElementById('completed').textContent = data.stats.completed || 0;
+        document.getElementById('cancelled').textContent = data.stats.cancelled || 0;
+      })
+      .catch(err => console.error('Erreur lors du chargement des statistiques:', err));
+  </script>
+</body>
+</html>

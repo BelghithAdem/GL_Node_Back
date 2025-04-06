@@ -11,6 +11,7 @@ router.put('/:id', taskController.updateTask);
 router.delete('/:id', taskController.deleteTask);
 router.patch('/:id/status', taskController.updateTaskStatus);
 router.get('/by-status', taskController.getTasksByStatus);
+router.get('/stats', taskController.getTaskStats);
 
 router.get('/:id/status-history', async (req, res) => {
   try {

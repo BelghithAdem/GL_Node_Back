@@ -4,7 +4,7 @@ const Task = require('../models/Task');
 exports.createTask = async (req, res) => {
   try {
     const task = await Task.create({ ...req.body, user: req.user.id });
-    req.io.emit('task_created', task); // Notification WebSocket
+    req.io.emit("task_created", task); // Émettre un événement Socket.io
     res.status(201).json(task);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -86,6 +86,69 @@ exports.getTasksByStatus = async (req, res) => {
     });
 
     res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getTaskStats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Calculer les statistiques
+    const stats = await Task.aggregate([
+      { $match: { user: userId } }, // Filtrer par utilisateur
+      { $group: { 
+          _id: "$status", 
+          count: { $sum: 1 } 
+        } 
+      }
+    ]);
+
+    // Reformater les données pour un affichage clair
+    const formattedStats = stats.reduce((acc, stat) => {
+      acc[stat._id] = stat.count;
+      return acc;
+    }, {});
+
+    res.json({
+      totalTasks: stats.reduce((sum, stat) => sum + stat.count, 0),
+      stats: formattedStats,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getTaskStats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Calculer les statistiques
+    const stats = await Task.aggregate([
+      { $match: { user: userId } }, // Filtrer par utilisateur
+      { $group: { 
+          _id: "$status", 
+          count: { $sum: 1 } 
+        } 
+      }
+    ]);
+
+    // Reformater les données pour un affichage clair
+    const formattedStats = stats.reduce((acc, stat) => {
+      acc[stat._id] = stat.count;
+      return acc;
+    }, {});
+
+    res.json({
+      totalTasks: 10,
+      stats: {
+        pending: 4,
+        in_progress: 3,
+        completed: 2,
+        cancelled: 1
+      }
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
