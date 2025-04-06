@@ -1,0 +1,34 @@
+# 📂 Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# 📂 Environnements
+.env
+.env.local
+.env.test.local
+.env.production.local
+
+# 📂 Logs
+logs/
+*.log
+logs/*.log
+debug.log
+*.out
+*.pid
+*.seed
+
+# 📂 IDE et OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 📂 Dépendances
+package-lock.json
+yarn.lock
+
+# 📂 Build files
+dist/
+build/
+coverage/
