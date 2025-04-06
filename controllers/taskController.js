@@ -39,3 +39,44 @@ exports.deleteTask = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.updateTaskStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+  
+    const validStatuses = ['en_attente', 'en_cours', 'termine', 'annule'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Statut invalide' });
+    }
+  
+    try {
+      const task = await Task.findOneAndUpdate(
+        { _id: id, user: req.user.id },
+        { status },
+        { new: true }
+      );
+  
+      if (!task) return res.status(404).json({ message: 'Tâche introuvable' });
+  
+      req.io.emit('task_status_updated', task);
+      res.json(task);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  };
+  
+  exports.getTasksByStatus = async (req, res) => {
+    const { status } = req.query;
+  
+    try {
+      const tasks = await Task.find({
+        user: req.user.id,
+        ...(status && { status })
+      });
+  
+      res.json(tasks);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  };
+  
