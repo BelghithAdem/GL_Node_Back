@@ -21,6 +21,7 @@ app.set("views", __dirname + "/views");
 
 // Routes
 app.use("/api/users", require("./routes/userRoutes"));
+app.use("/api/tasks", require("./routes/taskRoutes"));
 
 // Example route for rendering an EJS template
 app.get("/", (req, res) => {
