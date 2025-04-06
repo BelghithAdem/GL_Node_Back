@@ -41,42 +41,53 @@ exports.deleteTask = async (req, res) => {
 };
 
 exports.updateTaskStatus = async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
-  
-    const validStatuses = ['en_attente', 'en_cours', 'termine', 'annule'];
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
+  const validTransitions = {
+    pending: ['in_progress', 'cancelled'],
+    in_progress: ['completed', 'cancelled'],
+    completed: [],
+    cancelled: [],
+  };
+
+  try {
+    const task = await Task.findOne({ _id: id, user: req.user.id });
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Statut invalide' });
+      return res.status(400).json({ error: 'Invalid status' });
     }
-  
-    try {
-      const task = await Task.findOneAndUpdate(
-        { _id: id, user: req.user.id },
-        { status },
-        { new: true }
-      );
-  
-      if (!task) return res.status(404).json({ message: 'Tâche introuvable' });
-  
-      req.io.emit('task_status_updated', task);
-      res.json(task);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+
+    if (!validTransitions[task.status].includes(status)) {
+      return res.status(400).json({ error: `Cannot transition from ${task.status} to ${status}` });
     }
-  };
-  
-  exports.getTasksByStatus = async (req, res) => {
-    const { status } = req.query;
-  
-    try {
-      const tasks = await Task.find({
-        user: req.user.id,
-        ...(status && { status })
-      });
-  
-      res.json(tasks);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  };
-  
+
+    // Update status and log the change
+    task.status = status;
+    task.statusHistory.push({ status, changedBy: req.user.id });
+    await task.save();
+
+    req.io.emit('task_status_updated', task);
+    res.json(task);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getTasksByStatus = async (req, res) => {
+  const { status } = req.query;
+
+  try {
+    const tasks = await Task.find({
+      user: req.user.id,
+      ...(status && { status })
+    });
+
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

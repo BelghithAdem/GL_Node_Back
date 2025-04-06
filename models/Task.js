@@ -5,6 +5,13 @@ const TaskSchema = new mongoose.Schema({
   description: String,
   status: { type: String, enum: ['pending', 'in_progress', 'completed', 'cancelled'], default: 'pending' },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  statusHistory: [
+    {
+      status: { type: String },
+      changedAt: { type: Date, default: Date.now },
+      changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    },
+  ],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Task', TaskSchema);
