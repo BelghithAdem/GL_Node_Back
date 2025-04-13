@@ -76,28 +76,38 @@ exports.register = async (req, res) => {
   }
 };
   
-  // 📌 Connexion de l'utilisateur
-  exports.login = async (req, res) => {
-    try {
-      const { email, password } = req.body;
-  
-      const user = await User.findOne({ email });
-      if (!user) {
-        return res.status(400).json({ message: "Email ou mot de passe incorrect" });
-      }
-  
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid) {   
-        return res.status(400).json({ message: "Email ou mot de passe incorrect" });
-      }
-  
-      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-  
-      res.status(200).json({ message: "Connexion réussie", token, user });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+// 📌 Connexion de l'utilisateur
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).render("auth/login", { message: "Email ou mot de passe incorrect" });
     }
-  };
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).render("auth/login", { message: "Email ou mot de passe incorrect" });
+    }
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    // 👉 Stocker le token dans un cookie sécurisé
+    res.cookie("token", token, {
+      httpOnly: true,  // Empêche l'accès au cookie par JavaScript côté client
+      secure: process.env.NODE_ENV === "production",  // Assure la sécurité en production (HTTPS)
+      maxAge: 7 * 24 * 60 * 60 * 1000,  // Expiration du cookie : 7 jours
+    });
+    
+
+    // 👉 Rediriger vers /dashboard
+    return res.redirect("/api/tasks/dashboard");
+  } catch (error) {
+    return res.status(500).render("auth/login", { message: error.message });
+  }
+};
+
 
   exports.me = async (req, res) => {
     try {

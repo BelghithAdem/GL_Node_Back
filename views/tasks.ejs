@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gérer les tâches</title>
+  <!-- Include Tailwind CSS from CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Include Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- Navigation -->
+  <nav class="bg-white text-gray-900 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <a href="/api/tasks/dashboard" class="text-xl font-bold">Task Manager</a>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+          <!-- Manage Tasks Button (active) -->
+          <a href="/api/tasks/manage" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+            <i data-lucide="clipboard-list" class="h-4 w-4 mr-2"></i>
+            <span class="hidden sm:inline">Gérer les tâches</span>
+            <span class="sm:hidden">Tâches</span>
+          </a>
+          
+          <!-- Add Task Button -->
+          <button id="newTaskBtn" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+            <i data-lucide="plus" class="h-4 w-4 mr-2"></i>
+            <span class="hidden sm:inline">Nouvelle tâche</span>
+            <span class="sm:hidden">Ajouter</span>
+          </button>
+          
+          <!-- Dashboard Button -->
+          <a href="/api/tasks/dashboard" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+            <i data-lucide="layout-dashboard" class="h-4 w-4 mr-2"></i>
+            <span class="hidden sm:inline">Dashboard</span>
+            <span class="sm:hidden">Dashboard</span>
+          </a>
+          
+          <!-- User and Logout Buttons -->
+          <button class="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
+            <i data-lucide="user" class="h-5 w-5"></i>
+          </button>
+          <a href="/api/users/logout" class="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
+            <i data-lucide="log-out" class="h-5 w-5"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8 flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Gérer les tâches</h1>
+        <p class="mt-1 text-gray-600">Consultez, modifiez et supprimez vos tâches</p>
+      </div>
+      
+      <!-- Filter and Search -->
+      <div class="flex space-x-2">
+        <div class="relative">
+          <select id="statusFilter" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-black focus:border-black sm:text-sm">
+            <option value="all">Tous les statuts</option>
+            <option value="pending">En attente</option>
+            <option value="in_progress">En cours</option>
+            <option value="completed">Terminées</option>
+            <option value="cancelled">Annulées</option>
+          </select>
+        </div>
+        
+        <div class="relative">
+          <input type="text" id="searchInput" placeholder="Rechercher..." class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-black focus:border-black sm:text-sm">
+          <div class="absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <i data-lucide="search" class="h-4 w-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tasksTableBody" class="bg-white divide-y divide-gray-200">
+            <% if (tasks && tasks.length > 0) { %>
+              <% tasks.forEach(task => { %>
+                <tr class="task-row" data-status="<%= task.status %>">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= task.title %></td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <%= task.description ? (task.description.length > 50 ? task.description.substring(0, 50) + '...' : task.description) : 'Aucune description' %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <% let statusClass = ''; %>
+                    <% if (task.status === 'pending') { statusClass = 'bg-yellow-100 text-yellow-800'; } %>
+                    <% if (task.status === 'in_progress') { statusClass = 'bg-blue-100 text-blue-800'; } %>
+                    <% if (task.status === 'completed') { statusClass = 'bg-green-100 text-green-800'; } %>
+                    <% if (task.status === 'cancelled') { statusClass = 'bg-red-100 text-red-800'; } %>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= statusClass %>">
+                      <% if (task.status === 'pending') { %>En attente<% } %>
+                      <% if (task.status === 'in_progress') { %>En cours<% } %>
+                      <% if (task.status === 'completed') { %>Terminée<% } %>
+                      <% if (task.status === 'cancelled') { %>Annulée<% } %>
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                    <button class="edit-task-btn text-gray-600 hover:text-gray-900" data-id="<%= task._id %>">
+                      <i data-lucide="edit" class="h-5 w-5"></i>
+                    </button>
+                    <button class="view-history-btn text-gray-600 hover:text-gray-900" data-id="<%= task._id %>">
+                      <i data-lucide="history" class="h-5 w-5"></i>
+                    </button>
+                    <button class="delete-task-btn text-gray-600 hover:text-red-600" data-id="<%= task._id %>">
+                      <i data-lucide="trash-2" class="h-5 w-5"></i>
+                    </button>
+                  </td>
+                </tr>
+              <% }); %>
+            <% } else { %>
+              <tr>
+                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                  Aucune tâche trouvée. Créez votre première tâche en cliquant sur "Nouvelle tâche".
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- New/Edit Task Modal -->
+  <div id="taskModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b flex justify-between items-center">
+        <h3 id="modalTitle" class="text-lg font-medium text-gray-900">Nouvelle tâche</h3>
+        <button id="closeModal" class="text-gray-400 hover:text-gray-500">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+      <form id="taskForm" class="px-6 py-4 space-y-4">
+        <input type="hidden" id="taskId" name="taskId">
+        
+        <div>
+          <label for="title" class="block text-sm font-medium text-gray-700">Titre</label>
+          <input type="text" id="title" name="title" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-black focus:border-black sm:text-sm">
+        </div>
+        
+        <div>
+          <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+          <textarea id="description" name="description" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-black focus:border-black sm:text-sm"></textarea>
+        </div>
+        
+        <div>
+          <label for="status" class="block text-sm font-medium text-gray-700">Statut</label>
+          <select id="status" name="status" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-black focus:border-black sm:text-sm">
+            <option value="pending">En attente</option>
+            <option value="in_progress">En cours</option>
+            <option value="completed">Terminée</option>
+            <option value="cancelled">Annulée</option>
+          </select>
+        </div>
+        
+        
+        <div class="pt-2 flex justify-end space-x-3">
+          <button type="button" id="cancelBtn" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+            Annuler
+          </button>
+          <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+            Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div class="px-6 py-4 bg-gray-50 border-b">
+        <h3 class="text-lg font-medium text-gray-900">Confirmer la suppression</h3>
+      </div>
+      <div class="px-6 py-4">
+        <p class="text-sm text-gray-500">Êtes-vous sûr de vouloir supprimer cette tâche ? Cette action est irréversible.</p>
+      </div>
+      <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+        <button id="cancelDelete" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+          Annuler
+        </button>
+        <button id="confirmDelete" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+          Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task History Modal -->
+  <div id="historyModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b flex justify-between items-center">
+        <h3 class="text-lg font-medium text-gray-900">Historique des statuts</h3>
+        <button id="closeHistoryModal" class="text-gray-400 hover:text-gray-500">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+      <div class="px-6 py-4 max-h-96 overflow-y-auto">
+        <div id="historyContent" class="space-y-4">
+          <!-- History content will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+    
+    // DOM Elements
+    const taskModal = document.getElementById('taskModal');
+    const deleteModal = document.getElementById('deleteModal');
+    const historyModal = document.getElementById('historyModal');
+    const newTaskBtn = document.getElementById('newTaskBtn');
+    const closeModal = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const taskForm = document.getElementById('taskForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const taskIdInput = document.getElementById('taskId');
+    const titleInput = document.getElementById('title');
+    const descriptionInput = document.getElementById('description');
+    const statusInput = document.getElementById('status');
+    const cancelDelete = document.getElementById('cancelDelete');
+    const confirmDelete = document.getElementById('confirmDelete');
+    const closeHistoryModal = document.getElementById('closeHistoryModal');
+    const historyContent = document.getElementById('historyContent');
+    const statusFilter = document.getElementById('statusFilter');
+    const searchInput = document.getElementById('searchInput');
+    
+    let currentTaskId = null;
+    
+    // Event Listeners
+    newTaskBtn.addEventListener('click', openNewTaskModal);
+    closeModal.addEventListener('click', closeTaskModal);
+    cancelBtn.addEventListener('click', closeTaskModal);
+    taskForm.addEventListener('submit', handleTaskSubmit);
+    cancelDelete.addEventListener('click', closeDeleteModal);
+    confirmDelete.addEventListener('click', deleteTask);
+    closeHistoryModal.addEventListener('click', closeTaskHistoryModal);
+    statusFilter.addEventListener('change', filterTasks);
+    searchInput.addEventListener('input', filterTasks);
+    
+    // Add event listeners to edit and delete buttons
+    document.querySelectorAll('.edit-task-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditTaskModal(btn.dataset.id));
+    });
+    
+    document.querySelectorAll('.delete-task-btn').forEach(btn => {
+      btn.addEventListener('click', () => openDeleteModal(btn.dataset.id));
+    });
+    
+    document.querySelectorAll('.view-history-btn').forEach(btn => {
+      btn.addEventListener('click', () => openTaskHistoryModal(btn.dataset.id));
+    });
+    
+    // Functions
+    function openNewTaskModal() {
+      modalTitle.textContent = 'Nouvelle tâche';
+      taskIdInput.value = '';
+      taskForm.reset();
+      taskModal.classList.remove('hidden');
+    }
+    
+    function openEditTaskModal(taskId) {
+      modalTitle.textContent = 'Modifier la tâche';
+      
+      // Fetch task data
+      fetch(`/api/tasks/byId/${taskId}`)
+        .then(response => response.json())
+        .then(task => {
+          taskIdInput.value = task._id;
+          titleInput.value = task.title;
+          descriptionInput.value = task.description || '';
+          statusInput.value = task.status;
+          
+          taskModal.classList.remove('hidden');
+        })
+        .catch(err => {
+          console.error('Error fetching task:', err);
+          alert('Erreur lors du chargement de la tâche');
+        });
+    }
+    
+    function closeTaskModal() {
+      taskModal.classList.add('hidden');
+      taskForm.reset();
+    }
+    
+    function handleTaskSubmit(e) {
+  e.preventDefault();
+
+  const taskId = taskIdInput.value;
+  const taskData = {
+    title: titleInput.value,
+    description: descriptionInput.value,
+    status: statusInput.value,
+  };
+
+  // ✅ Utiliser PUT si on modifie une tâche, sinon POST pour en créer une nouvelle
+  const isEdit = !!taskId;
+  const url = isEdit ? `/api/tasks/${taskId}` : '/api/tasks';
+  const method = isEdit ? 'PUT' : 'POST';
+
+  fetch(url, {
+    method: method,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(taskData),
+    credentials: 'include' // Pour envoyer les cookies contenant le token
+  })
+    .then(response => {
+      if (!response.ok) throw new Error('Erreur lors de la sauvegarde');
+      return response.json();
+    })
+    .then(data => {
+      closeTaskModal();
+      window.location.reload();
+    })
+    .catch(err => {
+      console.error('Error saving task:', err);
+      alert('Erreur lors de la sauvegarde de la tâche');
+    });
+}
+
+    
+    function openDeleteModal(taskId) {
+      currentTaskId = taskId;
+      deleteModal.classList.remove('hidden');
+    }
+    
+    function closeDeleteModal() {
+      deleteModal.classList.add('hidden');
+      currentTaskId = null;
+    }
+    
+    function deleteTask() {
+  if (!currentTaskId) return;
+
+  fetch(`/api/tasks/${currentTaskId}`, {
+    method: 'DELETE',
+    credentials: 'include', // 👈 important si le token est dans les cookies
+  })
+    .then(response => {
+      if (!response.ok) throw new Error('Erreur lors de la suppression');
+      closeDeleteModal();
+      window.location.reload();
+    })
+    .catch(err => {
+      console.error('Error deleting task:', err);
+      alert('Erreur lors de la suppression de la tâche');
+    });
+}
+
+    
+    function openTaskHistoryModal(taskId) {
+      // Fetch task history
+      fetch(`/api/tasks/${taskId}/status-history`)
+        .then(response => response.json())
+        .then(history => {
+          historyContent.innerHTML = '';
+          
+          if (history.length === 0) {
+            historyContent.innerHTML = '<p class="text-sm text-gray-500">Aucun historique disponible pour cette tâche.</p>';
+          } else {
+            history.forEach(entry => {
+              const statusClass = getStatusClass(entry.status);
+              const date = new Date(entry.changedAt).toLocaleString();
+              
+              const historyItem = document.createElement('div');
+              historyItem.className = 'border-l-2 pl-3 py-2';
+              historyItem.style.borderColor = getStatusColor(entry.status);
+              
+              historyItem.innerHTML = `
+                <div class="flex justify-between items-start">
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                    ${getStatusLabel(entry.status)}
+                  </span>
+                  <span class="text-xs text-gray-500">${date}</span>
+                </div>
+                <p class="text-sm text-gray-600 mt-1">
+                  Modifié par: ${entry.changedBy ? entry.changedBy.name : 'Système'}
+                </p>
+              `;
+              
+              historyContent.appendChild(historyItem);
+            });
+          }
+          
+          historyModal.classList.remove('hidden');
+        })
+        .catch(err => {
+          console.error('Error fetching task history:', err);
+          alert('Erreur lors du chargement de l\'historique');
+        });
+    }
+    
+    function closeTaskHistoryModal() {
+      historyModal.classList.add('hidden');
+    }
+    
+    function getStatusClass(status) {
+      switch (status) {
+        case 'pending': return 'bg-yellow-100 text-yellow-800';
+        case 'in_progress': return 'bg-blue-100 text-blue-800';
+        case 'completed': return 'bg-green-100 text-green-800';
+        case 'cancelled': return 'bg-red-100 text-red-800';
+        default: return 'bg-gray-100 text-gray-800';
+      }
+    }
+    
+    function getStatusColor(status) {
+      switch (status) {
+        case 'pending': return '#F59E0B';
+        case 'in_progress': return '#3B82F6';
+        case 'completed': return '#10B981';
+        case 'cancelled': return '#EF4444';
+        default: return '#6B7280';
+      }
+    }
+    
+    function getStatusLabel(status) {
+      switch (status) {
+        case 'pending': return 'En attente';
+        case 'in_progress': return 'En cours';
+        case 'completed': return 'Terminée';
+        case 'cancelled': return 'Annulée';
+        default: return status;
+      }
+    }
+    function filterTasks() {
+      const statusValue = statusFilter.value;
+      const searchValue = searchInput.value.toLowerCase();
+      const rows = document.querySelectorAll('.task-row');
+      
+      rows.forEach(row => {
+        const status = row.dataset.status;
+        const title = row.querySelector('td:first-child').textContent.toLowerCase();
+        const description = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        
+        const statusMatch = statusValue === 'all' || status === statusValue;
+        const searchMatch = title.includes(searchValue) || description.includes(searchValue);
+        
+        if (statusMatch && searchMatch) {
+          row.classList.remove('hidden');
+        } else {
+          row.classList.add('hidden');
+        }
+      });
+    }
+
+    
+
+  </script>
+</body>
+</html>

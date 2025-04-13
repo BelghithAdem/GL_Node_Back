@@ -1,9 +1,19 @@
 // controllers/task.controller.js
 const Task = require('../models/Task');
+const jwt = require("jsonwebtoken");
 
 exports.createTask = async (req, res) => {
   try {
-    const task = await Task.create({ ...req.body, user: req.user.id });
+    const token = req.cookies.token; // 1. Lire le token depuis le cookie
+
+    if (!token) {
+      return res.status(401).json({ error: "Accès refusé. Aucun token fourni." });
+    }
+  
+    // 2. Vérifier et décoder le token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+    const task = await Task.create({ ...req.body, user: userId });
     req.io.emit("task_created", task); // Émettre un événement Socket.io
     res.status(201).json(task);
   } catch (err) {
@@ -12,14 +22,57 @@ exports.createTask = async (req, res) => {
 };
 
 exports.getTasks = async (req, res) => {
-  const tasks = await Task.find({ user: req.user.id });
+  const token = req.cookies.token; // 1. Lire le token depuis le cookie
+
+  if (!token) {
+    return res.status(401).json({ error: "Accès refusé. Aucun token fourni." });
+  }
+
+  // 2. Vérifier et décoder le token
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const userId = decoded.userId;
+  const tasks = await Task.find({ user: userId });
   res.json(tasks);
 };
+exports.getTaskById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Vérifier l'authentification via le token
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({ error: "Accès refusé. Aucun token fourni." });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Récupérer la tâche en vérifiant aussi l'utilisateur
+    const task = await Task.findOne({ _id: id, user: userId });
+
+    if (!task) {
+      return res.status(404).json({ error: "Tâche non trouvée." });
+    }
+
+    res.json(task);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 
 exports.updateTask = async (req, res) => {
   const { id } = req.params;
   try {
-    const task = await Task.findOneAndUpdate({ _id: id, user: req.user.id }, req.body, { new: true });
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res.status(401).json({ error: "Accès refusé. Aucun token fourni." });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+    const task = await Task.findOneAndUpdate({ _id: id, user: userId }, req.body, { new: true });
     if (!task) return res.status(404).json({ message: 'Not found' });
     req.io.emit('task_updated', task);
     res.json(task);
@@ -29,18 +82,34 @@ exports.updateTask = async (req, res) => {
 };
 
 exports.deleteTask = async (req, res) => {
-  const { id } = req.params;
   try {
-    const task = await Task.findOneAndDelete({ _id: id, user: req.user.id });
-    if (!task) return res.status(404).json({ message: 'Not found' });
-    req.io.emit('task_deleted', { id });
-    res.json({ message: 'Deleted' });
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res.status(401).json({ error: "Accès refusé. Aucun token fourni." });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    const { id } = req.params; // 👈 Récupération de l'id depuis l'URL
+
+    const task = await Task.findOneAndDelete({ _id: id, user: userId });
+
+    if (!task) {
+      return res.status(404).json({ message: "Tâche non trouvée." });
+    }
+
+    req.io.emit('task_deleted', { id }); // 👈 Événement Socket.io
+    res.json({ message: "Tâche supprimée avec succès." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+
 exports.updateTaskStatus = async (req, res) => {
+
   const { id } = req.params;
   const { status } = req.body;
 
@@ -53,7 +122,15 @@ exports.updateTaskStatus = async (req, res) => {
   };
 
   try {
-    const task = await Task.findOne({ _id: id, user: req.user.id });
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res.status(401).json({ error: "Accès refusé. Aucun token fourni." });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+    const task = await Task.findOne({ _id: id, user: userId });
     if (!task) return res.status(404).json({ message: 'Task not found' });
 
     if (!validStatuses.includes(status)) {
@@ -93,64 +170,36 @@ exports.getTasksByStatus = async (req, res) => {
 
 exports.getTaskStats = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const token = req.cookies.token; // 1. Lire le token depuis le cookie
 
-    // Calculer les statistiques
-    const stats = await Task.aggregate([
-      { $match: { user: userId } }, // Filtrer par utilisateur
-      { $group: { 
-          _id: "$status", 
-          count: { $sum: 1 } 
-        } 
-      }
-    ]);
+    if (!token) {
+      return res.status(401).json({ error: "Accès refusé. Aucun token fourni." });
+    }
 
-    // Reformater les données pour un affichage clair
-    const formattedStats = stats.reduce((acc, stat) => {
-      acc[stat._id] = stat.count;
-      return acc;
-    }, {});
+    // 2. Vérifier et décoder le token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
 
+    // 3. Récupérer toutes les tâches de l'utilisateur
+    const tasks = await Task.find({ user: userId });
+
+    // 4. Calculer les statistiques manuellement
+    const stats = {};
+    for (const task of tasks) {
+      const status = task.status || "unknown";
+      stats[status] = (stats[status] || 0) + 1;
+    }
+
+    const totalTasks = tasks.length;
+
+    // 5. Retourner la réponse complète
     res.json({
-      totalTasks: stats.reduce((sum, stat) => sum + stat.count, 0),
-      stats: formattedStats,
+      totalTasks,
+      stats,
+      tasks, // Inclure toutes les tâches dans la réponse
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Erreur dans getTaskStats :", err);
+    res.status(500).json({ error: "Erreur serveur: " + err.message });
   }
 };
-
-exports.getTaskStats = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    // Calculer les statistiques
-    const stats = await Task.aggregate([
-      { $match: { user: userId } }, // Filtrer par utilisateur
-      { $group: { 
-          _id: "$status", 
-          count: { $sum: 1 } 
-        } 
-      }
-    ]);
-
-    // Reformater les données pour un affichage clair
-    const formattedStats = stats.reduce((acc, stat) => {
-      acc[stat._id] = stat.count;
-      return acc;
-    }, {});
-
-    res.json({
-      totalTasks: 10,
-      stats: {
-        pending: 4,
-        in_progress: 3,
-        completed: 2,
-        cancelled: 1
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
