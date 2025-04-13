@@ -69,8 +69,8 @@ exports.register = async (req, res) => {
     // Remove manual hashing here
     const user = new User({ name, email, password, age });
     await user.save();
-
-    res.status(201).json({ message: "Utilisateur créé avec succès", user });
+  
+    res.redirect("/api/users/login");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
