@@ -58,5 +58,15 @@ io.on("connection", (socket) => {
   });
 });
 
+// Route pour la déconnexion
+app.get('/api/users/logout', (req, res) => {
+  // Supprimer le cookie contenant le token JWT
+  res.clearCookie('token');  // Nom du cookie où le token JWT est stocké
+
+  // Rediriger vers la page d'accueil ou la page de connexion après la déconnexion
+  res.redirect('/api/users/login');  // Ou '/home', '/dashboard', etc. selon ta configuration
+});
+
+
 // 🚀 Start server
 server.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));

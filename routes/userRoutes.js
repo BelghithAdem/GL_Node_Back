@@ -2,6 +2,7 @@ const express = require("express");
 const {
   register,
   login,
+  me,
   getUsers,
   deleteUser,
 } = require("../controllers/userController");
@@ -16,10 +17,8 @@ router.get("/login", (req, res) => res.render("auth/login"));
 router.get("/register", (req, res) => res.render("auth/register"));
 
 // Render user management page (protected)
-router.get("/manage", authMiddleware, async (req, res) => {
-  const users = await getUsers(req, res, true); // Fetch users for rendering
-  res.render("auth/manage", { users });
-});
+router.get("/manage", authMiddleware, me);
+
 
 // API routes
 router.post("/register", register);

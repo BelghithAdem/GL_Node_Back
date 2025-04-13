@@ -111,11 +111,20 @@ exports.login = async (req, res) => {
 
   exports.me = async (req, res) => {
     try {
-      const user = await User.findById(req.userId).select("-password");
+       const token = req.cookies.token; // 1. Lire le token depuis le cookie
+      
+        if (!token) {
+          return res.status(401).json({ error: "Accès refusé. Aucun token fourni." });
+        }
+      
+        // 2. Vérifier et décoder le token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.userId;
+      const user = await User.findById(userId).select("-password");
       if (!user) {
         return res.status(404).json({ message: "Utilisateur non trouvé" });
       }
-      res.json(user);
+      res.render("auth/manage", { user });
       } catch (error) {
         res.status(500).json({ message: error.message });
         }

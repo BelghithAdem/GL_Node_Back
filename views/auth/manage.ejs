@@ -1,36 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Management</title>
+  <title>Profile</title>
+  <!-- Include Tailwind CSS from CDN (for production, consider installing via npm) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Include Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-  <h1>User Management</h1>
-  <table border="1">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Age</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% users.forEach(user => { %>
-        <tr>
-          <td><%= user.name %></td>
-          <td><%= user.email %></td>
-          <td><%= user.age %></td>
-          <td>
-            <form action="/api/users/<%= user._id %>" method="POST" style="display:inline;">
-              <input type="hidden" name="_method" value="DELETE">
-              <button type="submit">Delete</button>
-            </form>
-          </td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
+
+<body class="bg-gray-100 min-h-screen">
+  <!-- Navigation -->
+  <nav class="bg-white text-gray-900 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <a href="/api/tasks/dashboard" class="text-xl font-bold">Task Manager</a>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+          <!-- Manage Tasks Button (active) -->
+          <a href="/api/tasks/manage" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+            <i data-lucide="clipboard-list" class="h-4 w-4 mr-2"></i>
+            <span class="hidden sm:inline">Gérer les tâches</span>
+            <span class="sm:hidden">Tâches</span>
+          </a>
+    
+          <!-- Dashboard Button -->
+          <a href="/api/tasks/dashboard" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+            <i data-lucide="layout-dashboard" class="h-4 w-4 mr-2"></i>
+            <span class="hidden sm:inline">Dashboard</span>
+            <span class="sm:hidden">Dashboard</span>
+          </a>
+          
+          <!-- User and Logout Buttons -->
+          <a href="/api/users/manage" class="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
+            <i data-lucide="user" class="h-5 w-5"></i>
+          </a>
+          <a href="/api/users/logout" class="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
+            <i data-lucide="log-out" class="h-5 w-5"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Profile Settings</h1>
+        <p class="text-gray-600 mt-1">Manage your account information</p>
+      </div>
+      <div class="flex items-center space-x-2">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+          <i data-lucide="user" class="w-4 h-4 mr-1"></i>
+          Profile
+        </span>
+      </div>
+    </div>
+    
+    <!-- Profile Card -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+      <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Personal Information
+        </h3>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+          Your account details and preferences
+        </p>
+      </div>
+      <div class="px-4 py-5 sm:p-6">
+        <div class="space-y-6">
+          <!-- Name Field -->
+          <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start">
+            <label class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+              Full name
+            </label>
+            <div class="mt-1 sm:mt-0 sm:col-span-2">
+              <div class="max-w-lg flex rounded-md shadow-sm">
+                <input type="text" value="<%= user.name %>" readonly class="flex-1 block w-full focus:ring-black focus:border-black min-w-0 rounded-md sm:text-sm border-gray-300 bg-gray-50">
+              </div>
+            </div>
+          </div>
+
+          <!-- Email Field -->
+          <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start">
+            <label class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+              Email address
+            </label>
+            <div class="mt-1 sm:mt-0 sm:col-span-2">
+              <div class="max-w-lg flex rounded-md shadow-sm">
+                <input type="email" value="<%= user.email %>" readonly class="flex-1 block w-full focus:ring-black focus:border-black min-w-0 rounded-md sm:text-sm border-gray-300 bg-gray-50">
+              </div>
+            </div>
+          </div>
+
+          <!-- Age Field -->
+          <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start">
+            <label class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+              Age
+            </label>
+            <div class="mt-1 sm:mt-0 sm:col-span-2">
+              <div class="max-w-lg flex rounded-md shadow-sm">
+                <input type="number" value="<%= user.age %>" readonly class="flex-1 block w-full focus:ring-black focus:border-black min-w-0 rounded-md sm:text-sm border-gray-300 bg-gray-50">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+        <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+          <i data-lucide="edit" class="mr-2 h-4 w-4"></i>
+          Edit
+        </button>
+        <button type="button" class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black">
+          <i data-lucide="save" class="mr-2 h-4 w-4"></i>
+          Save changes
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Initialize Lucide Icons -->
+  <script>
+    lucide.createIcons();
+  </script>
 </body>
 </html>
