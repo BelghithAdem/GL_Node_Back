@@ -58,6 +58,11 @@ io.on("connection", (socket) => {
   });
 });
 
+// Emit events for task changes
+const emitTaskEvent = (event, data) => {
+  io.emit(event, data); // Broadcast to all connected clients
+};
+
 // Route pour la déconnexion
 app.get('/api/users/logout', (req, res) => {
   // Supprimer le cookie contenant le token JWT
@@ -67,6 +72,7 @@ app.get('/api/users/logout', (req, res) => {
   res.redirect('/api/users/login');  // Ou '/home', '/dashboard', etc. selon ta configuration
 });
 
+module.exports = { app, server, io, emitTaskEvent };
 
 // 🚀 Start server
 server.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));

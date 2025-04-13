@@ -9,6 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Include Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 
 <body class="bg-gray-100 min-h-screen">
@@ -238,6 +239,30 @@
         `;
         lucide.createIcons();
       });
+
+    const socket = io();
+
+    // Listen for task creation
+    socket.on("task_created", (task) => {
+      console.log("Task created:", task);
+      // Update the dashboard dynamically (e.g., add the task to the list)
+      // Example: Reload the stats or append the task to the task list
+      window.location.reload(); // Simplified for now
+    });
+
+    // Listen for task updates
+    socket.on("task_updated", (task) => {
+      console.log("Task updated:", task);
+      // Update the specific task in the dashboard
+      window.location.reload(); // Simplified for now
+    });
+
+    // Listen for task deletion
+    socket.on("task_deleted", ({ id }) => {
+      console.log("Task deleted:", id);
+      // Remove the task from the dashboard
+      window.location.reload(); // Simplified for now
+    });
   </script>
 
 </body>

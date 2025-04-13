@@ -55,5 +55,4 @@ router.get('/manage',authMiddleware, async (req, res) => {
   }
 });
 
-
 module.exports = router;

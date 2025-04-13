@@ -1,6 +1,7 @@
 // controllers/task.controller.js
 const Task = require('../models/Task');
 const jwt = require("jsonwebtoken");
+const { emitTaskEvent } = require("../server");
 
 exports.createTask = async (req, res) => {
   try {
