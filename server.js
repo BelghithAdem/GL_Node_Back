@@ -72,6 +72,7 @@ app.get('/api/users/logout', (req, res) => {
   res.redirect('/api/users/login');  // Ou '/home', '/dashboard', etc. selon ta configuration
 });
 
+
 module.exports = { app, server, io, emitTaskEvent };
 
 // 🚀 Start server

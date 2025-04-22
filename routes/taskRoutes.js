@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
-const auth = require('../middleware/authMiddleware');
 const User = require('../models/User');
 const Task = require('../models/Task');
 const authMiddleware = require("../middleware/authMiddleware");
 
 // Protect all routes
-router.use(auth);
+router.use(authMiddleware);
 
 // RESTful task endpoints
 router.post('/',authMiddleware, taskController.createTask);

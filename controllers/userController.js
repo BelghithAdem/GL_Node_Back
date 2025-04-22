@@ -1,6 +1,132 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+
+
+//foget password
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.render('auth/forgot-password', {
+        message: 'Email is required'
+      });
+    }
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).render('auth/forgot-password', {
+        message: 'No account with that email exists'
+      });
+    }
+
+    // Create reset token
+    const token = crypto.randomBytes(20).toString('hex');
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    // Create email transporter
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+
+    // Send email
+    const resetUrl = `http://${req.headers.host}/api/users/reset-password/${token}`;
+    await transporter.sendMail({
+      to: user.email,
+      subject: 'Password Reset',
+      html: `
+        <p>You requested a password reset</p>
+        <p>Click this <a href="${resetUrl}">link</a> to reset your password</p>
+        <p>This link will expire in 1 hour</p>
+      `
+    });
+
+    res.render('auth/forgot-password', {
+      message: 'Password reset link has been sent to your email'
+    });
+  } catch (err) {
+    res.status(500).render('auth/forgot-password', {
+      message: 'Error processing your request'
+    });
+  }
+};
+
+
+// Render Reset Password Form
+exports.renderResetPasswordForm = async (req, res) => {
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: req.params.token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.render('auth/reset-password', {
+        error: 'Password reset token is invalid or has expired'
+      });
+    }
+
+    res.render('auth/reset-password', {
+      token: req.params.token,
+      email: user.email
+    });
+  } catch (err) {
+    res.render('auth/reset-password', {
+      error: 'Error processing your request'
+    });
+  }
+};
+
+// Reset Password
+exports.resetPassword = async (req, res) => {
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: req.params.token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.render('auth/reset-password', {
+        error: 'Password reset token is invalid or has expired'
+      });
+    }
+
+    // Set new password
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    // Send confirmation email
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+
+    await transporter.sendMail({
+      to: user.email,
+      subject: 'Password Changed',
+      html: '<p>Your password has been successfully changed</p>'
+    });
+
+    res.redirect('/api/users/login');
+  } catch (err) {
+    res.render('auth/reset-password', {
+      error: 'Error processing your request'
+    });
+  }
+};
 
 // 📌 Créer un utilisateur
 exports.createUser = async (req, res) => {
